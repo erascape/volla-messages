@@ -231,7 +231,20 @@ jobs:
     needs: create-release
     permissions: write-all
     environment: Relay Release
-    runs-on: self-hosted-win-x64
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: self-hosted-win-x64
+            target: x86_64-pc-windows-msvc
+          - arch: x86
+            runner: windows-latest
+            target: i686-pc-windows-msvc
+          - arch: arm64
+            runner: windows-latest
+            target: aarch64-pc-windows-msvc
+    runs-on: ${{ matrix.runner }}
     steps:
       # Step 1: Install Chocolatey (if not already installed)
       - name: Install Chocolatey
@@ -254,21 +267,21 @@ jobs:
 
       - uses: actions/checkout@v3
 
-      - name: setup node
-        uses: actions/setup-node@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 20
 
-      - name: install Rust stable
-        uses: lionel-faber/toolchain@038230242ab440f3b34fc2fbd7ae4111add9e690
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          override: true
-          toolchain: 1.89
+          toolchain: "1.89"
+          targets: ${{ matrix.target }}
 
-      - name: install Go stable
+      - name: Install Go
         uses: actions/setup-go@v4
         with:
-          go-version: "stable"
+          go-version: stable
 
       - name: Install and prepare
         run: |
@@ -284,7 +297,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          args: --verbose --features holochain_bundled
+          releaseId: ${{ needs.create-release.outputs.releaseId }}
+          args: --verbose --features holochain_bundled --target ${{ matrix.target }}
 
       - name: Sign the App
         if: false
