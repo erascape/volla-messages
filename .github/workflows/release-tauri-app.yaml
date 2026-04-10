@@ -33,9 +33,9 @@ jobs:
     needs: create-release
     permissions: write-all
     environment: Relay Release
-    runs-on: [self-hosted, yolo]
+    runs-on: ubuntu-22.04
     container:
-      image: ubuntu:22.04
+      image: null
     steps:
       - uses: actions/checkout@v3
 
